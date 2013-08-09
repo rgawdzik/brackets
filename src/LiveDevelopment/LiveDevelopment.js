@@ -84,6 +84,7 @@ define(function LiveDevelopment(require, exports, module) {
         NativeApp            = require("utils/NativeApp"),
         PreferencesDialogs   = require("preferences/PreferencesDialogs"),
         ProjectManager       = require("project/ProjectManager"),
+        ServerRequestManager = require("LiveDevelopment/ServerRequestManager"),
         Strings              = require("strings"),
         StringUtils          = require("utils/StringUtils");
 
@@ -144,6 +145,7 @@ define(function LiveDevelopment(require, exports, module) {
     var _serverProvider;      // current LiveDevServerProvider
     var _closeReason;         // reason why live preview was closed
     var _openDeferred;        // promise returned for each call to open()
+    var _serverRequestManager;
     
     function _isHtmlFileExt(ext) {
         return (FileUtils.isStaticHtmlFileExt(ext) ||
@@ -307,16 +309,6 @@ define(function LiveDevelopment(require, exports, module) {
             _liveDocument = undefined;
         }
         
-        if (_serverProvider) {
-            // Stop listening for requests
-            if (_serverProvider.setRequestFilterPaths) {
-                _serverProvider.setRequestFilterPaths([]);
-            }
-
-            // Remove any "request" listeners that were added previously
-            $(_serverProvider).off(".livedev");
-        }
-        
         if (_relatedDocuments) {
             _relatedDocuments.forEach(function (liveDoc) {
                 liveDoc.close();
@@ -342,30 +334,11 @@ define(function LiveDevelopment(require, exports, module) {
      * @param {Document} source document to open
      */
     function _openDocument(doc, editor) {
-        _closeDocument();
-        _liveDocument = _createDocument(doc, editor);
-        
-        // Enable instrumentation
-        if (_liveDocument && _liveDocument.setInstrumentationEnabled) {
-            var enableInstrumentation = false;
-            
-            if (_serverProvider && _serverProvider.setRequestFilterPaths) {
-                enableInstrumentation = true;
-                
-                _serverProvider.setRequestFilterPaths(
-                    ["/" + encodeURI(ProjectManager.makeProjectRelativeIfPossible(doc.file.fullPath))]
-                );
-                
-                // Send custom HTTP response for the current live document
-                $(_serverProvider).on("request.livedev", function (event, request) {
-                    // response can be null in which case the StaticServerDomain reverts to simple file serving.
-                    var response = _liveDocument && _liveDocument.getResponseData ? _liveDocument.getResponseData() : null;
-                    request.send(response);
-                });
-            }
-                
-            _liveDocument.setInstrumentationEnabled(enableInstrumentation);
-        }
+        // FIXME close document when disconnecting
+        // _closeDocument();
+        // _liveDocument = _createDocument(doc, editor);
+
+        return _createDocument(doc, editor);
     }
     
     /**
@@ -685,7 +658,7 @@ define(function LiveDevelopment(require, exports, module) {
          */
         function cleanup() {
             _setStatus(STATUS_INACTIVE);
-            _serverProvider = null;
+            _serverRequestManager.stop();
             deferred.resolve();
         }
         
@@ -919,7 +892,15 @@ define(function LiveDevelopment(require, exports, module) {
         _setStatus(STATUS_CONNECTING);
         
         // create live document
-        _openDocument(_getCurrentDocument(), EditorManager.getCurrentFullEditor());
+        _liveDocument = _openDocument(_getCurrentDocument(), EditorManager.getCurrentFullEditor());
+
+        // handles request events from server to provide instrumented HTTP response bodies
+        _serverRequestManager = new ServerRequestManager({
+            server          : _serverProvider,
+            pathResolver    : ProjectManager.makeProjectRelativeIfPossible
+        });
+
+        _serverRequestManager.addLiveDocument(_liveDocument);
 
         // Install a one-time event handler when connected to the launcher page
         $(Inspector).one("connect", _onConnect);
