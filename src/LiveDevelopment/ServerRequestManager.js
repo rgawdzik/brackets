@@ -28,7 +28,7 @@ define(function LiveDevelopment(require, exports, module) {
     "use strict";
 
     function ServerRequestManager(config) {
-        console.assert(server.setRequestFilterPaths);
+        console.assert(config.server.setRequestFilterPaths);
 
         this._server        = config.server;
         this._pathResolver  = config.pathResolver; // ProjectManager.makeProjectRelativeIfPossible(doc.file.fullPath)
@@ -37,17 +37,41 @@ define(function LiveDevelopment(require, exports, module) {
         this._started       = false;
     }
 
-    ServerRequestManager.prototype.addLiveDocument = function (liveDocument) {
+    ServerRequestManager.prototype._documentKey = function (liveDocument) {
+        return "/" + encodeURI(this._pathResolver(liveDocument.doc.file.fullPath));
+    };
+
+    /**
+     * Adds a live document to the request filter
+     * @param {Object} liveDocument A document that supports instrumentation (setInstrumentationEnabled)
+     */
+    ServerRequestManager.prototype.add = function (liveDocument) {
         if (!liveDocument && !liveDocument.setInstrumentationEnabled) {
             return;
         }
+        
+        // enable instrumentation
+        liveDocument.setInstrumentationEnabled(true);
 
-        this._liveDocuments[encodeURI(this._pathResolver(liveDocument))] = liveDocument;
+        // use the project relative path as a key to lookup requests
+        var key = this._documentKey(liveDocument);
+        this._liveDocuments[key] = liveDocument;
+        
+        // update the paths to watch
         this._updateRequestFilterPaths();
     };
 
-    ServerRequestManager.prototype.removeLiveDocument = function (liveDocument) {
-        this._liveDocuments[this._pathResolver(liveDocument)];
+    /**
+     * Removes a live document from the request filter.
+     * @param {Object} liveDocument A document that supports instrumentation (setInstrumentationEnabled)
+     */
+    ServerRequestManager.prototype.remove = function (liveDocument) {
+        var key = this._liveDocuments[this._documentKey(liveDocument)];
+        
+        if (key) {
+            delete this._liveDocuments[key];
+        }
+        
         this._updateRequestFilterPaths();
     };
 
@@ -56,6 +80,10 @@ define(function LiveDevelopment(require, exports, module) {
         this._updateRequestFilterPaths();
     };
 
+    /**
+     * @private
+     * Update the list of paths that fire "request" events
+     */
     ServerRequestManager.prototype._updateRequestFilterPaths = function () {
         if (!this._started) {
             return;
@@ -63,7 +91,7 @@ define(function LiveDevelopment(require, exports, module) {
 
         var paths = [];
 
-        Object.keys(_liveDocuments).forEach(function (path) {
+        Object.keys(this._liveDocuments).forEach(function (path) {
             paths.push(path);
         });
 
@@ -72,7 +100,8 @@ define(function LiveDevelopment(require, exports, module) {
 
     ServerRequestManager.prototype._onRequest = function (event, request) {
         var key             = request.location.pathname,
-            liveDocument    = this._liveDocuments[key];
+            liveDocument    = this._liveDocuments[key],
+            response;
 
         // send instrumented response or null to fallback to static file
         response = liveDocument && liveDocument.getResponseData ? liveDocument.getResponseData() : null;
@@ -92,11 +121,11 @@ define(function LiveDevelopment(require, exports, module) {
 
     ServerRequestManager.prototype.stop = function () {
         if (this._started) {
-            // clear filters
-            this._server.setRequestFilterPaths([]);
-
             // remoe event handler
             $(this._server).off(".ServerRequestManager", this._onRequest);
+            
+            // clear filters
+            this._server.setRequestFilterPaths([]);
         }
 
         this._started = false;

@@ -84,7 +84,7 @@ define(function LiveDevelopment(require, exports, module) {
         NativeApp            = require("utils/NativeApp"),
         PreferencesDialogs   = require("preferences/PreferencesDialogs"),
         ProjectManager       = require("project/ProjectManager"),
-        ServerRequestManager = require("LiveDevelopment/ServerRequestManager"),
+        ServerRequestManager = require("LiveDevelopment/ServerRequestManager").ServerRequestManager,
         Strings              = require("strings"),
         StringUtils          = require("utils/StringUtils");
 
@@ -303,7 +303,7 @@ define(function LiveDevelopment(require, exports, module) {
     }
 
     /** Close a live document */
-    function _closeDocument() {
+    function _closeLiveDocuments() {
         if (_liveDocument) {
             _liveDocument.close();
             _liveDocument = undefined;
@@ -334,10 +334,6 @@ define(function LiveDevelopment(require, exports, module) {
      * @param {Document} source document to open
      */
     function _openDocument(doc, editor) {
-        // FIXME close document when disconnecting
-        // _closeDocument();
-        // _liveDocument = _createDocument(doc, editor);
-
         return _createDocument(doc, editor);
     }
     
@@ -619,7 +615,7 @@ define(function LiveDevelopment(require, exports, module) {
         $(Inspector.Page).off("frameNavigated.livedev");
 
         unloadAgents();
-        _closeDocument();
+        _closeLiveDocuments();
         _setStatus(STATUS_INACTIVE);
     }
 
@@ -658,7 +654,11 @@ define(function LiveDevelopment(require, exports, module) {
          */
         function cleanup() {
             _setStatus(STATUS_INACTIVE);
-            _serverRequestManager.stop();
+
+            if (_serverRequestManager) {
+                _serverRequestManager.stop();
+            }
+
             deferred.resolve();
         }
         
@@ -900,7 +900,9 @@ define(function LiveDevelopment(require, exports, module) {
             pathResolver    : ProjectManager.makeProjectRelativeIfPossible
         });
 
-        _serverRequestManager.addLiveDocument(_liveDocument);
+        // start listening for requests
+        _serverRequestManager.add(_liveDocument);
+        _serverRequestManager.start();
 
         // Install a one-time event handler when connected to the launcher page
         $(Inspector).one("connect", _onConnect);
