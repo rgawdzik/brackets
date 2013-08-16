@@ -318,7 +318,13 @@ define(function LiveDevelopment(require, exports, module) {
         }
     }
 
-    /** Create a live version of a Brackets document */
+    /**
+     * @private
+     * Create a live version of a Brackets document
+     * @param {Document} doc
+     * @param {Editor} editor
+     * @return {HTMLDocument|CSSDocument}
+     */
     function _createDocument(doc, editor) {
         var DocClass = _classForDocument(doc);
         if (DocClass) {
@@ -326,15 +332,6 @@ define(function LiveDevelopment(require, exports, module) {
         } else {
             return null;
         }
-    }
-
-    /**
-     * @private
-     * Open a live document
-     * @param {Document} source document to open
-     */
-    function _openDocument(doc, editor) {
-        return _createDocument(doc, editor);
     }
     
     /**
@@ -892,7 +889,7 @@ define(function LiveDevelopment(require, exports, module) {
         _setStatus(STATUS_CONNECTING);
         
         // create live document
-        _liveDocument = _openDocument(_getCurrentDocument(), EditorManager.getCurrentFullEditor());
+        _liveDocument = _createDocument(_getCurrentDocument(), EditorManager.getCurrentFullEditor());
 
         // handles request events from server to provide instrumented HTTP response bodies
         _serverRequestManager = new ServerRequestManager({
@@ -993,11 +990,12 @@ define(function LiveDevelopment(require, exports, module) {
         }
     }
 
-    /** Triggered by a document change from the DocumentManager */
+    /**
+     * @private
+     * DocumentManager currentDocumentChange event handler. 
+     */
     function _onDocumentChange() {
-        var doc = _getCurrentDocument(),
-            status = STATUS_ACTIVE,
-            promise;
+        var doc = _getCurrentDocument();
         
         if (!doc) {
             return;
@@ -1005,26 +1003,17 @@ define(function LiveDevelopment(require, exports, module) {
 
         if (Inspector.connected()) {
             hideHighlight();
-            if (agents.network && agents.network.wasURLRequested(doc.url)) {
-                _openDocument(doc, EditorManager.getCurrentFullEditor());
-                
-                promise = _getRelatedDocuments();
-            } else {
-                if (exports.config.experimental || _isHtmlFileExt(doc.extension)) {
-                    promise = close().done(open);
-                } else {
-                    promise = $.Deferred().resolve();
-                }
-            }
             
-            promise
-                .fail(close)
-                .done(function () {
-                    if (doc.isDirty && _classForDocument(doc) !== CSSDocument) {
-                        status = STATUS_OUT_OF_SYNC;
-                    }
-                    _setStatus(status);
-                });
+            // close the current session and begin a new session if the current
+            // document changes to an HTML document that was not loaded yet
+            var wasRequested = agents.network && agents.network.wasURLRequested(doc.url),
+                isHTML = exports.config.experimental || _isHtmlFileExt(doc.extension);
+            
+            if (!wasRequested && isHTML) {
+                // TODO (jasonsanjose): optimize this by reusing the same connection
+                // no need to fully teardown.
+                close().done(open);
+            }
         }
     }
 
