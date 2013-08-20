@@ -158,6 +158,25 @@ define(function CSSDocumentModule(require, exports, module) {
             }
         }
     };
+    
+    /**
+     * Enable instrumented CSS
+     * @param enabled {boolean} 
+     */
+    CSSDocument.prototype.setInstrumentationEnabled = function setInstrumentationEnabled(enabled) {
+        // no-op
+        // "Instrumentation" is always enabled for CSS, we make no modifications
+    };
+    
+    /**
+     * Returns a JSON object with HTTP response overrides
+     * @returns {{body: string}}
+     */
+    CSSDocument.prototype.getResponseData = function getResponseData(enabled) {
+        return {
+            body: this.doc.getText()
+        };
+    };
 
     /** Event Handlers *******************************************************/
 

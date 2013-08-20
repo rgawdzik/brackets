@@ -299,6 +299,7 @@ define(function LiveDevelopment(require, exports, module) {
         if (index !== -1) {
             $(liveDoc).on("deleted", _handleRelatedDocumentDeleted);
             _relatedDocuments.splice(index, 1);
+            _serverRequestManager.remove(liveDoc);
         }
     }
 
@@ -357,6 +358,7 @@ define(function LiveDevelopment(require, exports, module) {
                         var liveDoc = _createDocument(doc);
                         if (liveDoc) {
                             _relatedDocuments.push(liveDoc);
+                            _serverRequestManager.add(liveDoc);
                             $(liveDoc).on("deleted", _handleRelatedDocumentDeleted);
                         }
                     }
