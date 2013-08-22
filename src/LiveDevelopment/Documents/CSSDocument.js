@@ -71,14 +71,6 @@ define(function CSSDocumentModule(require, exports, module) {
         this.onDeleted = this.onDeleted.bind(this);
         $(this.doc).on("change", this.onChange);
         $(this.doc).on("deleted", this.onDeleted);
-
-        // get the style sheet
-        this.styleSheet = CSSAgent.styleForURL(this.doc.url);
-
-        // If the CSS document is dirty, push the changes into the browser now
-        if (doc.isDirty) {
-            CSSAgent.reloadCSSForDocument(this.doc);
-        }
         
         this.onActiveEditorChange = this.onActiveEditorChange.bind(this);
         $(EditorManager).on("activeEditorChange", this.onActiveEditorChange);
@@ -125,6 +117,19 @@ define(function CSSDocumentModule(require, exports, module) {
         $(this.doc).off("deleted", this.onDeleted);
         this.doc.releaseRef();
         this.detachFromEditor();
+    };
+ 
+    /**
+     * Force the browser to update if the file is dirty
+     */
+    CSSDocument.prototype._updateBrowser = function () {
+        // get the style sheet
+        this.styleSheet = CSSAgent.styleForURL(this.doc.url);
+
+        // If the CSS document is dirty, push the changes into the browser now
+        if (this.doc.isDirty) {
+            CSSAgent.reloadCSSForDocument(this.doc);
+        }
     };
 
     CSSDocument.prototype.attachToEditor = function (editor) {
@@ -193,6 +198,7 @@ define(function CSSDocumentModule(require, exports, module) {
             HighlightAgent.redraw();
         }
     };
+
     /** Triggered if the Document's file is deleted */
     CSSDocument.prototype.onDeleted = function onDeleted(event, editor, change) {
         // clear the CSS

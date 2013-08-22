@@ -113,14 +113,20 @@ define(function (require, exports, module) {
      * @return {LiveDevServerProvider}
      * true for yes, otherwise false.
      */
-    function getProvider(localPath) {
-
-        var provider, i;
+    function getServer(localPath) {
+        var server, i;
 
         for (i = 0; i < _serverProviders.length; i++) {
-            provider = _serverProviders[i].provider;
-            if (provider.canServe(localPath)) {
-                return provider;
+            server = _serverProviders[i].provider;
+            
+            // Old API returned a singleton provider
+            // New API defines a create() method
+            if (server.create) {
+                server = server.create();
+            }
+            
+            if (server.canServe(localPath)) {
+                return server;
             }
         }
 
@@ -146,8 +152,11 @@ define(function (require, exports, module) {
         _serverProviders.push(providerObj);
         _serverProviders.sort(_providerSort);
     }
+    
+    // Backwards compatibility
+    exports.getProvider         = getServer;
 
     // Define public API
-    exports.getProvider         = getProvider;
+    exports.getServer           = getServer;
     exports.registerProvider    = registerProvider;
 });
