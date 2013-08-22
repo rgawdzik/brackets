@@ -130,7 +130,7 @@ define(function (require, exports, module) {
         }
 
         return null;
-    }
+    };
 
     /**
      * Used to check if the server has finished launching after opening
