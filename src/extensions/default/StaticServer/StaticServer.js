@@ -29,7 +29,7 @@ maxerr: 50, browser: true */
 define(function (require, exports, module) {
     "use strict";
 
-    var BaseServer  = brackets.getModule("LiveDevelopment/BaseServer").BaseServer,
+    var BaseServer  = brackets.getModule("LiveDevelopment/Servers/BaseServer").BaseServer,
         FileUtils   = brackets.getModule("file/FileUtils");
 
     /**
@@ -146,12 +146,10 @@ define(function (require, exports, module) {
      * a setInstrumentationEnabled method. Updates request filters.
      */
     StaticServer.prototype.add = function (liveDocument) {
-        if (!liveDocument.setInstrumentationEnabled) {
-            return;
+        if (liveDocument.setInstrumentationEnabled) {
+            // enable instrumentation
+            liveDocument.setInstrumentationEnabled(true);
         }
-        
-        // enable instrumentation
-        liveDocument.setInstrumentationEnabled(true);
         
         BaseServer.prototype.add.call(this, liveDocument);
         

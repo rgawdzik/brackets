@@ -32,8 +32,8 @@ define(function (require, exports, module) {
     var AppInit              = brackets.getModule("utils/AppInit"),
         ExtensionUtils       = brackets.getModule("utils/ExtensionUtils"),
         FileUtils            = brackets.getModule("file/FileUtils"),
-        LiveDevServerManager = brackets.getModule("LiveDevelopment/LiveDevServerManager"),
-        BaseServer           = brackets.getModule("LiveDevelopment/BaseServer").BaseServer,
+        LiveDevServerManager = brackets.getModule("LiveDevelopment/Servers/LiveDevServerManager"),
+        BaseServer           = brackets.getModule("LiveDevelopment/Servers/BaseServer").BaseServer,
         NodeConnection       = brackets.getModule("utils/NodeConnection"),
         ProjectManager       = brackets.getModule("project/ProjectManager"),
         StaticServer         = require("StaticServer").StaticServer;
@@ -105,7 +105,7 @@ define(function (require, exports, module) {
                     clearTimeout(connectionTimeout);
 
                     // Register as a Live Development server provider
-                    LiveDevServerManager.registerProvider({ create: _createStaticServer }, 5);
+                    LiveDevServerManager.registerServer({ create: _createStaticServer }, 5);
 
                     _nodeConnectionDeferred.resolveWith(null, [_nodeConnection]);
                 },

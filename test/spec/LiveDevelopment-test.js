@@ -34,8 +34,8 @@ define(function (require, exports, module) {
         NativeFileSystem        = require("file/NativeFileSystem").NativeFileSystem,
         FileUtils               = require("file/FileUtils"),
         DefaultDialogs          = require("widgets/DefaultDialogs"),
-        FileServer              = require("LiveDevelopment/FileServer").FileServer,
-        UserServer              = require("LiveDevelopment/UserServer").UserServer;
+        FileServer              = require("LiveDevelopment/Servers/FileServer").FileServer,
+        UserServer              = require("LiveDevelopment/Servers/UserServer").UserServer;
 
     // The following are all loaded from the test window
     var CommandManager,
@@ -476,7 +476,6 @@ define(function (require, exports, module) {
                     testWindow           = w;
                     Dialogs              = testWindow.brackets.test.Dialogs;
                     LiveDevelopment      = testWindow.brackets.test.LiveDevelopment;
-                    LiveDevServerManager = testWindow.brackets.test.LiveDevServerManager;
                     DOMAgent             = testWindow.brackets.test.DOMAgent;
                     DocumentManager      = testWindow.brackets.test.DocumentManager;
                     CommandManager       = testWindow.brackets.test.CommandManager;
@@ -493,7 +492,6 @@ define(function (require, exports, module) {
                     testWindow           = null;
                     Dialogs              = null;
                     LiveDevelopment      = null;
-                    LiveDevServerManager = null;
                     DOMAgent             = null;
                     DocumentManager      = null;
                     CommandManager       = null;

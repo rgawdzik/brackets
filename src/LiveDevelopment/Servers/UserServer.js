@@ -27,17 +27,14 @@
 define(function (require, exports, module) {
     "use strict";
     
-    var BaseServer  = require("LiveDevelopment/BaseServer").BaseServer,
+    var BaseServer  = require("LiveDevelopment/Servers/BaseServer").BaseServer,
         FileUtils   = require("file/FileUtils");
-
-    // The path on Windows starts with a drive letter (e.g. "C:").
-    // In order to make it a valid file: URL we need to add an
-    // additional slash to the prefix.
-    var PREFIX = (brackets.platform === "win") ? "file:///" : "file://";
 
     /**
      * @constructor
-     * Server for file: URLs
+     * Live preview server for user specified server as defined with Live Preview Base Url
+     * Project setting. In a clean installation of Brackets, this is the highest priority
+     * server provider, if defined.
      *
      * @param {!{baseUrl: string, root: string, pathResolver: function(string)}} config
      *    Configuration parameters for this server:
@@ -45,51 +42,33 @@ define(function (require, exports, module) {
      *        pathResolver  - Function to covert absolute native paths to project relative paths
      *        root          - Native path to the project root (and base URL)
      */
-    function FileServer(config) {
+    function UserServer(config) {
         BaseServer.call(this, config);
     }
     
-    FileServer.prototype = Object.create(BaseServer.prototype);
-    FileServer.prototype.constructor = BaseServer;
+    UserServer.prototype = Object.create(BaseServer.prototype);
+    UserServer.prototype.constructor = BaseServer;
 
     /**
      * Determines whether we can serve local file.
      * @param {String} localPath A local path to file being served.
      * @return {Boolean} true for yes, otherwise false.
      */
-    FileServer.prototype.canServe = function (localPath) {
-        // FileServer requires that the base URL is undefined and static HTML files
-        return (!this._baseUrl && FileUtils.isStaticHtmlFileExt(localPath));
-    };
-
-    /**
-     * @private
-     * See BaseServer#urlToPath
-     */
-    FileServer.prototype.urlToPath = function (url) {
-        var path;
-        
-        if (url.indexOf("file://") === 0) {
-            // Convert a file URL to local file path
-            path = url.slice(7);
-            
-            if (path && brackets.platform === "win" && path.charAt(0) === "/") {
-                path = path.slice(1);
-            }
-        
-            return decodeURI(path);
+    UserServer.prototype.canServe = function (localPath) {
+        // UserServer can only function when the project specifies a base URL
+        if (!this._baseUrl) {
+            return false;
         }
 
-        return null;
+        // If we can't transform the local path to a project relative path,
+        // the path cannot be served
+        if (localPath === this._pathResolver(localPath)) {
+            return false;
+        }
+
+        return FileUtils.isStaticHtmlFileExt(localPath) ||
+            FileUtils.isServerHtmlFileExt(localPath);
     };
 
-    /**
-     * @private
-     * See BaseServer#pathToUrl
-     */
-    FileServer.prototype.pathToUrl = function (path) {
-        return encodeURI(PREFIX + path);
-    };
-
-    exports.FileServer = FileServer;
+    exports.UserServer = UserServer;
 });

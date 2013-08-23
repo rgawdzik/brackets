@@ -133,18 +133,23 @@ define(function (require, exports, module) {
     };
 
     /**
-     * Used to check if the server has finished launching after opening
-     * the project. User is required to make sure their external sever
-     * is ready, so indicate that we're always ready.
+     * Called by LiveDevelopment before to prepare the server before navigating
+     * to the project's base URL. The provider returns a jQuery promise.
+     * The Live Development launch process waits until the promise
+     * is resolved or rejected. If the promise is rejected, an error window
+     * is shown and Live Development does not start..
      *
-     * @return {jQuery.Promise} Promise that is already resolved
+     * @return {jQuery.Promise} Promise that may be asynchronously resolved
+     *  when the server is ready to handle HTTP requests.
      */
     BaseServer.prototype.readyToServe = function () {
+        // Base implementation always resolves
         return $.Deferred().resolve().promise();
     };
     
     /**
-     * Determines if this server can serve local file.
+     * Determines if this server can serve local file. LiveDevServerManager
+     * calls this method when determining if a server can serve a file.
      * @param {String} localPath A local path to file being served.
      * @return {Boolean} true When the file can be served, otherwise false.
      */

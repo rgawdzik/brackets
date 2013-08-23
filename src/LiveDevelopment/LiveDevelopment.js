@@ -78,16 +78,16 @@ define(function LiveDevelopment(require, exports, module) {
         DefaultDialogs       = require("widgets/DefaultDialogs"),
         DocumentManager      = require("document/DocumentManager"),
         EditorManager        = require("editor/EditorManager"),
-        FileServer           = require("LiveDevelopment/FileServer").FileServer,
+        FileServer           = require("LiveDevelopment/Servers/FileServer").FileServer,
         FileUtils            = require("file/FileUtils"),
-        LiveDevServerManager = require("LiveDevelopment/LiveDevServerManager"),
+        LiveDevServerManager = require("LiveDevelopment/Servers/LiveDevServerManager"),
         NativeFileError      = require("file/NativeFileError"),
         NativeApp            = require("utils/NativeApp"),
         PreferencesDialogs   = require("preferences/PreferencesDialogs"),
         ProjectManager       = require("project/ProjectManager"),
         Strings              = require("strings"),
         StringUtils          = require("utils/StringUtils"),
-        UserServer           = require("LiveDevelopment/UserServer").UserServer;
+        UserServer           = require("LiveDevelopment/Servers/UserServer").UserServer;
 
     // Inspector
     var Inspector       = require("LiveDevelopment/Inspector/Inspector");
@@ -830,7 +830,7 @@ define(function LiveDevelopment(require, exports, module) {
     function _prepareServer(doc) {
         var deferred = new $.Deferred();
         
-        _server = LiveDevServerManager.getProvider(doc.file.fullPath);
+        _server = LiveDevServerManager.getServer(doc.file.fullPath);
         
         if (!exports.config.experimental && !_server) {
             if (FileUtils.isServerHtmlFileExt(doc.extension)) {
@@ -983,8 +983,8 @@ define(function LiveDevelopment(require, exports, module) {
         $(ProjectManager).on("beforeProjectClose beforeAppClose", close);
 
         // Register user defined server provider
-        LiveDevServerManager.registerProvider({ create: _createUserServer }, 99);
-        LiveDevServerManager.registerProvider({ create: _createFileServer }, 0);
+        LiveDevServerManager.registerServer({ create: _createUserServer }, 99);
+        LiveDevServerManager.registerServer({ create: _createFileServer }, 0);
 
         // Initialize exports.status
         _setStatus(STATUS_INACTIVE);
