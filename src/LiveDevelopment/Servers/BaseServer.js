@@ -47,7 +47,7 @@ define(function (require, exports, module) {
     /**
      * Returns a base url for current project. 
      *
-     * @return {String}
+     * @return {string}
      * Base url for current project.
      */
     BaseServer.prototype.getBaseUrl = function () {
@@ -57,6 +57,7 @@ define(function (require, exports, module) {
     /**
      * @private
      * Augments the given Brackets document with information that's useful for live development
+     * @param {Object} liveDocument
      */
     BaseServer.prototype._setDocInfo = function (liveDocument) {
         var parentUrl,
@@ -90,8 +91,9 @@ define(function (require, exports, module) {
 
     /**
      * Returns a URL for a given path
-     * @param {string} path
-     * @param {string} Path using the project's base URL
+     * @param {string} path Absolute path to covert to a URL
+     * @return {?string} Converts a path within the project root to a URL.
+     *  Returns null if the path is not a descendant of the project root.
      */
     BaseServer.prototype.pathToUrl = function (path) {
         var url             = null,
@@ -113,7 +115,8 @@ define(function (require, exports, module) {
     /**
      * Convert a URL to a local full file path
      * @param {string} url
-     * @return {string}
+     * @return {?string} The absolute path for given URL or null if the path is
+     *  not a descendant of the project.
      */
     BaseServer.prototype.urlToPath = function (url) {
         var path,
@@ -150,8 +153,8 @@ define(function (require, exports, module) {
     /**
      * Determines if this server can serve local file. LiveDevServerManager
      * calls this method when determining if a server can serve a file.
-     * @param {String} localPath A local path to file being served.
-     * @return {Boolean} true When the file can be served, otherwise false.
+     * @param {string} localPath A local path to file being served.
+     * @return {boolean} true When the file can be served, otherwise false.
      */
     BaseServer.prototype.canServe = function (localPath) {
         return true;

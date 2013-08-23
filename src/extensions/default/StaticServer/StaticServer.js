@@ -56,8 +56,8 @@ define(function (require, exports, module) {
 
     /**
      * Determines whether we can serve local file.
-     * @param {String} localPath A local path to file being served.
-     * @return {Boolean} true for yes, otherwise false.
+     * @param {string} localPath A local path to file being served.
+     * @return {boolean} true for yes, otherwise false.
      */
     StaticServer.prototype.canServe = function (localPath) {
         if (!this._nodeConnection.connected()) {
